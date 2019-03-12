@@ -138,6 +138,8 @@ architecture rtl of top is
   signal foreground_color    : std_logic_vector(23 downto 0);
   signal background_color    : std_logic_vector(23 downto 0);
   signal frame_color         : std_logic_vector(23 downto 0);
+  signal pix_row             : std_logic_vector(GRAPH_MEM_ADDR_WIDTH-1 downto 0);
+  signal pix_col             : std_logic_vector(GRAPH_MEM_ADDR_WIDTH-1 downto 0);
  
   signal char_we             : std_logic;
   signal offset              : std_logic_vector(MEM_ADDR_WIDTH-1 downto 0);
@@ -157,6 +159,7 @@ architecture rtl of top is
   signal dir_blue            : std_logic_vector(7 downto 0);
   signal dir_pixel_column    : std_logic_vector(10 downto 0);
   signal dir_pixel_row       : std_logic_vector(10 downto 0);
+  signal sec_cnt             : std_logic_vector(24 downto 0);
 
 begin
 
@@ -170,7 +173,7 @@ begin
   
   -- removed to inputs pin
   direct_mode <= '0';
-  display_mode     <= "01";  -- 01 - text mode, 10 - graphics mode, 11 - text & graphics
+  display_mode     <= "10";  -- 01 - text mode, 10 - graphics mode, 11 - text & graphics
   
   font_size        <= x"1";
   show_frame       <= '1';
@@ -277,7 +280,7 @@ begin
   --char_we
 	char_we <= '1';
 	
-	offset <= (others => '0');
+	
 	
 	process(pix_clock_s, vga_rst_n_s) begin
 		if(vga_rst_n_s = '0') then
@@ -291,19 +294,53 @@ begin
 		end if;
 	end process;
 	
-	char_value <= "00"&x"C" when char_address = ("00000000000000" + offset) else
-						"00"&x"F" when char_address = ("00000000000001" + offset) else
-						"01"&x"2" when char_address = "00000000000010" + offset else
-						"00"&x"5" when char_address = "00000000000011" + offset else
-						"00"&x"D" when char_address = "00000000000100" + offset else
-						"10"&x"0" when char_address  = "00000000000101" + offset else
-						"00"&x"9" when char_address  = "00000000001001" + offset else
+	process(pix_clock_s, vga_rst_n_s) begin
+		if(vga_rst_n_s = '0') then
+			sec_cnt <= (others=>'0');
+		elsif(rising_edge(pix_clock_s)) then
+			
+				if(sec_cnt = "1011111010111100001000000") then
+					sec_cnt <= (others=>'0');
+					offset <= offset + 1;
+				else
+					sec_cnt <= sec_cnt + 1;
+					offset <= offset;
+				end if;
+			
+		end if;
+	end process;
+	
+	
+					
+	
+	char_value <= "01"&x"4" when char_address = "00000000000000" + offset else
+						"00"&x"D" when char_address = "00000000000001" + offset else
+						"00"&x"E" when char_address = "00000000000010" + offset else
+						"01"&x"4" when char_address = "00000000000011" + offset else
 						"10"&x"0";
   
   -- koristeci signale realizovati logiku koja pise po GRAPH_MEM
   --pixel_address
   --pixel_value
   --pixel_we
+  
+  pixel_we <= '1';
+  
+  process(pix_clock_s) begin
+		
+			
+		if(rising_edge(pix_clock_s)) then
+			if(pixel_address = "00000000000000000010010101111111") then
+				pixel_address <= (others=>'0');
+			else
+				pixel_address <= pixel_address + 1;
+			end if;
+		end if;
+	end process;
+	
+	
+	pixel_value <= x"FFFFFFFF" when pixel_address else
+						x"00000000";
   
   
 end rtl;
