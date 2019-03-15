@@ -327,8 +327,21 @@ begin
   pixel_we <= '1';
   
   process(pix_clock_s) begin
-		
-			
+		if(rising_edge(pix_clock_s)) then
+			if(pix_col = "00000000000000000000000000010011") then
+				pix_col <= (others=>'0');
+				if(pix_row = "00000000000000000000000111011111") then
+					pix_row <= (others=>'0');
+				else
+					pix_row <= pix_row + 1;
+				end if;
+			else
+				pix_col <= pix_col + 1;
+			end if;
+		end if;
+	end process;
+	
+	process(pix_clock_s) begin
 		if(rising_edge(pix_clock_s)) then
 			if(pixel_address = "00000000000000000010010101111111") then
 				pixel_address <= (others=>'0');
@@ -338,8 +351,7 @@ begin
 		end if;
 	end process;
 	
-	
-	pixel_value <= x"FFFFFFFF" when pixel_address else
+	pixel_value <= x"FFFFFFFF" when pix_col >= 5 and pix_col <= 10 and pix_row >= 20 and pix_row <= 180 else
 						x"00000000";
   
   
