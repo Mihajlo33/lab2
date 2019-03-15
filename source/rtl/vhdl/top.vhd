@@ -23,6 +23,8 @@ entity top is
   port (
     clk_i          : in  std_logic;
     reset_n_i      : in  std_logic;
+	 direct_mode_i  : in  std_logic;
+	 display_mode_i : in  std_logic_vector(1 downto 0);
     -- vga
     vga_hsync_o    : out std_logic;
     vga_vsync_o    : out std_logic;
@@ -140,6 +142,7 @@ architecture rtl of top is
   signal frame_color         : std_logic_vector(23 downto 0);
   signal pix_row             : std_logic_vector(GRAPH_MEM_ADDR_WIDTH-1 downto 0);
   signal pix_col             : std_logic_vector(GRAPH_MEM_ADDR_WIDTH-1 downto 0);
+  signal pix_offset          : std_logic_vector(GRAPH_MEM_ADDR_WIDTH-1 downto 0);
  
   signal char_we             : std_logic;
   signal offset              : std_logic_vector(MEM_ADDR_WIDTH-1 downto 0);
@@ -160,7 +163,8 @@ architecture rtl of top is
   signal dir_pixel_column    : std_logic_vector(10 downto 0);
   signal dir_pixel_row       : std_logic_vector(10 downto 0);
   signal sec_cnt             : std_logic_vector(24 downto 0);
-
+  signal sec_cnt_pix         : std_logic_vector(24 downto 0);
+  
 begin
 
   -- calculate message lenght from font size
@@ -215,14 +219,14 @@ begin
     clk_i              => clk_i,
     reset_n_i          => reset_n_i,
     --
-    direct_mode_i      => direct_mode,
+    direct_mode_i      => direct_mode_i,
     dir_red_i          => dir_red,
     dir_green_i        => dir_green,
     dir_blue_i         => dir_blue,
     dir_pixel_column_o => dir_pixel_column,
     dir_pixel_row_o    => dir_pixel_row,
     -- cfg
-    display_mode_i     => display_mode,  -- 01 - text mode, 10 - graphics mode, 11 - text & graphics
+    display_mode_i     => display_mode_i,  -- 01 - text mode, 10 - graphics mode, 11 - text & graphics
     -- text mode interface
     text_addr_i        => char_address,
     text_data_i        => char_value,
@@ -350,7 +354,7 @@ begin
 			end if;
 		end if;
 	end process;
-	
+						
 	pixel_value <= x"FFFFFFFF" when pix_col >= 5 and pix_col <= 10 and pix_row >= 20 and pix_row <= 180 else
 						x"00000000";
   
